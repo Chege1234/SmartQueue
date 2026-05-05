@@ -240,15 +240,35 @@ export default function Layout({ children, currentPageName }) {
                 <div className="space-y-4 text-center md:text-left">
                   <h4 className="text-xs font-semibold text-foreground">System</h4>
                   <nav className="flex flex-col gap-3">
-                    <Link to="#" className="text-muted-foreground hover:text-foreground text-xs transition-colors">System Status</Link>
-                    <Link to="#" className="text-muted-foreground hover:text-foreground text-xs transition-colors">Documentation</Link>
+                    <Link
+                      to={createPageUrl("SystemStatus")}
+                      className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                    >
+                      System status
+                    </Link>
+                    <Link
+                      to={createPageUrl("Documentation")}
+                      className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                    >
+                      Documentation
+                    </Link>
                   </nav>
                 </div>
                 <div className="space-y-4 text-center md:text-left">
                   <h4 className="text-xs font-semibold text-foreground">Privacy</h4>
                   <nav className="flex flex-col gap-3">
-                    <Link to="#" className="text-muted-foreground hover:text-foreground text-xs transition-colors">Privacy Policy</Link>
-                    <Link to="#" className="text-muted-foreground hover:text-foreground text-xs transition-colors">Terms of Use</Link>
+                    <Link
+                      to={createPageUrl("PrivacyPolicy")}
+                      className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                    >
+                      Privacy policy
+                    </Link>
+                    <Link
+                      to={createPageUrl("TermsOfUse")}
+                      className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                    >
+                      Terms of use
+                    </Link>
                   </nav>
                 </div>
               </div>

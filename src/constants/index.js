@@ -29,6 +29,10 @@ export const ROUTES = {
     STUDENT_TICKET_VIEW: '/student-ticket-view',
     TAKE_TICKET: '/take-ticket',
     ROLE_SELECTION: '/role-selection',
-    REQUEST_STAFF_ACCESS: '/request-staff-access'
+    REQUEST_STAFF_ACCESS: '/request-staff-access',
+    SYSTEM_STATUS: '/system-status',
+    DOCUMENTATION: '/documentation',
+    PRIVACY_POLICY: '/privacy-policy',
+    TERMS_OF_USE: '/terms-of-use'
 };
 

@@ -18,6 +18,10 @@ export function createPageUrl(name) {
         StudentTakeTicket: "/student-take-ticket",
         StudentTicketView: "/student-ticket-view",
         TakeTicket: "/take-ticket",
+        SystemStatus: "/system-status",
+        Documentation: "/documentation",
+        PrivacyPolicy: "/privacy-policy",
+        TermsOfUse: "/terms-of-use",
     };
     return mapping[name] || `/${name.toLowerCase()}`;
 }

@@ -4,273 +4,301 @@ import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
 import { Alert, AlertDescription } from "@/Components/ui/alert";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/apiClient";
 import { supabase } from "@/api/supabaseClient";
-import { CheckCircle2, XCircle, Mail, Phone, Clock, User, AlertCircle } from "lucide-react";
+import { CheckCircle2, Mail, Phone, Clock, AlertCircle, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/Components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/Components/ui/dialog";
+import { cn } from "@/utils";
 
 export default function StaffRequestManager({ requests }) {
   const queryClient = useQueryClient();
   const [selectedRequest, setSelectedRequest] = React.useState(null);
   const [actionType, setActionType] = React.useState(null);
-  const [approveError, setApproveError] = React.useState('');
+  const [approveError, setApproveError] = React.useState("");
+  const [expandedRequestId, setExpandedRequestId] = React.useState(null);
 
   const approveMutation = useMutation({
     mutationFn: async (requestId) => {
-      const { data, error } = await supabase.functions.invoke('approve-staff', {
+      const { data, error } = await supabase.functions.invoke("approve-staff", {
         body: { request_id: requestId },
       });
-      if (error) throw new Error(error.message || 'Edge function error');
+      if (error) throw new Error(error.message || "Edge function error");
       if (data?.error) throw new Error(data.error);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['staffRequests']);
+      queryClient.invalidateQueries(["staffRequests"]);
       setSelectedRequest(null);
       setActionType(null);
-      setApproveError('');
+      setApproveError("");
+      setExpandedRequestId(null);
     },
     onError: (err) => {
-      setApproveError(err.message || 'Failed to approve request. Please try again.');
-    }
+      setApproveError(err.message || "Failed to approve request. Please try again.");
+    },
   });
 
   const rejectMutation = useMutation({
     mutationFn: async ({ id }) => {
-      const { data, error } = await supabase.functions.invoke('reject-staff', {
+      const { data, error } = await supabase.functions.invoke("reject-staff", {
         body: { request_id: id },
       });
-      if (error) throw new Error(error.message || 'Edge function error');
+      if (error) throw new Error(error.message || "Edge function error");
       if (data?.error) throw new Error(data.error);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['staffRequests']);
+      queryClient.invalidateQueries(["staffRequests"]);
       setSelectedRequest(null);
       setActionType(null);
-    }
+      setExpandedRequestId(null);
+    },
   });
 
   const handleApprove = (request) => {
     setSelectedRequest(request);
-    setActionType('approve');
-    setApproveError('');
+    setActionType("approve");
+    setApproveError("");
   };
 
   const handleReject = (request) => {
     setSelectedRequest(request);
-    setActionType('reject');
-    setApproveError('');
+    setActionType("reject");
+    setApproveError("");
   };
 
   const confirmAction = () => {
     if (!selectedRequest || !actionType) return;
-    if (actionType === 'approve') {
+    if (actionType === "approve") {
       approveMutation.mutate(selectedRequest.id);
     } else {
       rejectMutation.mutate({ id: selectedRequest.id });
     }
   };
 
+  const toggleRow = (id) => {
+    setExpandedRequestId((prev) => (prev === id ? null : id));
+  };
+
   const isPending = approveMutation.isPending || rejectMutation.isPending;
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const processedRequests = requests.filter(r => r.status !== 'pending');
+  const pendingRequests = requests.filter((r) => r.status === "pending");
+  const processedRequests = requests.filter((r) => r.status !== "pending");
 
   return (
     <>
-      <Card className="glass-card border-none overflow-hidden group">
-        <CardHeader className="p-8 border-b border-white/5 bg-white/5">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg font-black text-white uppercase tracking-widest">Clearance Queue</CardTitle>
-            <Badge className="bg-purple-500/20 text-purple-400 border-none font-black text-[10px] tracking-widest px-4 py-1.5 rounded-full uppercase">
-              {pendingRequests.length} Pending requests
-            </Badge>
-          </div>
+      <Card className="border-border/80 bg-card/90 shadow-none">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+          <CardTitle className="text-base font-semibold">Requests</CardTitle>
+          <Badge
+            className={
+              pendingRequests.length
+                ? "border-amber-400/35 bg-amber-500/12 text-amber-100"
+                : "border-border bg-muted text-muted-foreground"
+            }
+          >
+            {pendingRequests.length} pending
+          </Badge>
         </CardHeader>
         <CardContent className="p-0">
-          {pendingRequests.length === 0 ? (
-            <div className="text-center py-20 text-blue-100/20">
-              <User className="w-16 h-16 mx-auto mb-6 opacity-10" />
-              <p className="text-[10px] font-black uppercase tracking-[0.5em]">No pending clearance requests</p>
-            </div>
+          {pendingRequests.length === 0 && processedRequests.length === 0 ? (
+            <p className="p-8 text-center text-sm text-muted-foreground">No staff access requests yet.</p>
           ) : (
-            <div className="divide-y divide-white/5">
-              {pendingRequests.map((request) => (
-                <div key={request.id} className="flex flex-col xl:flex-row xl:items-center justify-between p-8 hover:bg-white/[0.02] transition-colors group">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-6 mb-6">
-                      <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-2xl shadow-purple-500/20 group-hover:rotate-6 transition-transform">
-                        {request.full_name[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-black text-white tracking-tight uppercase group-hover:text-purple-400 transition-colors">{request.full_name}</h3>
-                        <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 font-black uppercase text-[9px] tracking-[0.2em] mt-1">{request.department}</Badge>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-blue-100/30">
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-4 h-4 text-purple-500" />
-                        <span className="text-blue-100/60 lowercase font-medium text-xs">{request.email}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-4 h-4 text-blue-500" />
-                        {request.phone}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-purple-500" />
-                        {format(new Date(request.created_date), 'MMM dd, h:mm a')}
-                      </div>
-                    </div>
-                    {request.notes && (
-                      <div className="mt-6 p-4 bg-white/5 border border-white/5 rounded-2xl">
-                        <p className="text-[9px] font-black text-blue-100/20 uppercase tracking-widest mb-1">SUPPLEMENTAL INTEL:</p>
-                        <p className="text-xs text-blue-100/60 font-medium leading-relaxed italic">"{request.notes}"</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex xl:flex-col gap-3 mt-8 xl:mt-0 xl:ml-8">
-                    <Button
-                      onClick={() => handleApprove(request)}
-                      className="flex-1 xl:w-40 h-14 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 font-black uppercase tracking-widest text-[10px] rounded-xl transition-all"
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-3" />
-                      AUTHORIZE
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(request)}
-                      variant="ghost"
-                      className="flex-1 xl:w-40 h-14 bg-red-500/5 hover:bg-red-500/10 text-red-400 border border-red-500/10 font-black uppercase tracking-widest text-[10px] rounded-xl transition-all"
-                    >
-                      <XCircle className="w-4 h-4 mr-3" />
-                      REJECT
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <div>
+              {pendingRequests.length > 0 && (
+                <ul className="divide-y divide-border/60">
+                  {pendingRequests.map((request) => {
+                    const open = expandedRequestId === request.id;
+                    return (
+                      <li key={request.id}>
+                        <button
+                          type="button"
+                          onClick={() => toggleRow(request.id)}
+                          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/25 sm:px-5"
+                          aria-expanded={open}
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-sm font-semibold text-primary">
+                            {request.full_name?.[0]?.toUpperCase() ?? "?"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold text-foreground">{request.full_name}</p>
+                            <p className="truncate text-sm text-muted-foreground">
+                              {request.department}
+                              <span className="text-muted-foreground/70">
+                                {" · "}
+                                {format(new Date(request.created_date), "MMM d, h:mm a")}
+                              </span>
+                            </p>
+                          </div>
+                          <ChevronDown
+                            className={cn(
+                              "h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200",
+                              open && "rotate-180"
+                            )}
+                            aria-hidden
+                          />
+                        </button>
 
-          {processedRequests.length > 0 && (
-            <div className="p-8 border-t border-white/5 bg-white/[0.01]">
-              <h3 className="text-[10px] font-black text-blue-100/20 uppercase tracking-[0.4em] mb-6">Historical Record</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {processedRequests.slice(0, 6).map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all group/item">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-blue-100 font-bold group-hover/item:border-purple-500/30 transition-colors">
-                        {request.full_name[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-white uppercase tracking-tight">{request.full_name}</p>
-                        <p className="text-[8px] font-black text-blue-100/30 uppercase tracking-widest mt-0.5">{request.department}</p>
-                      </div>
-                    </div>
-                    <Badge className={request.status === 'approved' ? 'bg-green-500/20 text-green-400 border-none uppercase text-[8px] tracking-widest' : 'bg-red-500/20 text-red-400 border-none uppercase text-[8px] tracking-widest'}>
-                      {request.status}
-                    </Badge>
+                        {open ? (
+                          <div className="border-t border-border/60 bg-secondary/10 px-4 py-4 sm:px-5">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="min-w-0 flex-1 space-y-3">
+                                <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Mail className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span className="truncate">{request.email}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span>{request.phone}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span>{format(new Date(request.created_date), "MMM d, yyyy · h:mm a")}</span>
+                                  </div>
+                                </div>
+                                {request.notes ? (
+                                  <blockquote className="rounded-xl border border-border/60 bg-secondary/25 px-3 py-2 text-sm text-muted-foreground italic">
+                                    “{request.notes}”
+                                  </blockquote>
+                                ) : null}
+                              </div>
+                              <div className="flex shrink-0 flex-wrap gap-2 lg:flex-col lg:items-stretch">
+                                <Button size="sm" className="lg:w-full" onClick={() => handleApprove(request)}>
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-destructive/40 text-destructive hover:bg-destructive/10 lg:w-full"
+                                  onClick={() => handleReject(request)}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {processedRequests.length > 0 && (
+                <details className="group border-t border-border/60">
+                  <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-foreground marker:content-none sm:px-5 [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center justify-between gap-3">
+                      <span>
+                        Recent decisions
+                        <span className="ml-2 font-normal text-muted-foreground">
+                          ({processedRequests.length})
+                        </span>
+                      </span>
+                      <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                    </span>
+                  </summary>
+                  <div className="border-t border-border/60 px-4 pb-5 pt-2 sm:px-5">
+                    <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                      {processedRequests.slice(0, 12).map((request) => (
+                        <li
+                          key={request.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-secondary/15 px-3 py-2.5"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-medium text-foreground">
+                              {request.full_name?.[0]?.toUpperCase() ?? "?"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-foreground">{request.full_name}</p>
+                              <p className="truncate text-xs text-muted-foreground">{request.department}</p>
+                            </div>
+                          </div>
+                          <Badge
+                            className={
+                              request.status === "approved"
+                                ? "shrink-0 border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                                : "shrink-0 border-destructive/30 bg-destructive/10 text-red-200"
+                            }
+                          >
+                            {request.status}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                ))}
-              </div>
+                </details>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Premium Confirmation Dialog */}
-      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
-        <DialogContent className="glass-card border-white/10 text-white max-w-lg p-0 overflow-hidden">
-          <div className={`p-8 border-b border-white/5 bg-gradient-to-r ${actionType === 'approve' ? 'from-green-600/20 to-emerald-600/20' : 'from-red-600/20 to-rose-600/20'}`}>
-            <DialogHeader>
-              <div className="flex items-center gap-6">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl ${actionType === 'approve' ? 'bg-green-500 shadow-green-500/20' : 'bg-red-500 shadow-red-500/20'}`}>
-                  {actionType === 'approve' ? <CheckCircle2 className="w-8 h-8 text-white" /> : <XCircle className="w-8 h-8 text-white" />}
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
-                    {actionType === 'approve' ? 'Authorize Access' : 'Deny Access'}
-                  </DialogTitle>
-                  <DialogDescription className="text-blue-100/40 font-bold uppercase text-[10px] tracking-widest mt-1">
-                    System Security Protocol
-                  </DialogDescription>
-                </div>
-              </div>
-            </DialogHeader>
-          </div>
+      <Dialog
+        open={!!selectedRequest}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRequest(null);
+            setApproveError("");
+            setActionType(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{actionType === "approve" ? "Approve access" : "Reject request"}</DialogTitle>
+          </DialogHeader>
 
-          <div className="p-8 space-y-6">
+          <div className="space-y-4">
             {selectedRequest && (
-              <div className="space-y-4">
-                <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
-                  <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black text-blue-100/20 uppercase tracking-widest">Candidate Name</span>
-                    <span className="text-sm font-black text-white uppercase">{selectedRequest.full_name}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                    <span className="text-[10px] font-black text-blue-100/20 uppercase tracking-widest">Target Department</span>
-                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 font-black uppercase text-[9px] tracking-[0.2em]">{selectedRequest.department}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-blue-100/20 uppercase tracking-widest">Identification</span>
-                    <span className="text-xs font-medium text-blue-100/60 lowercase">{selectedRequest.email}</span>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
-                  <p className="text-[10px] font-medium text-blue-400/80 leading-relaxed text-center italic">
-                    {actionType === 'approve' 
-                      ? "Approval will grant immediate administrative privileges to the Staff Dashboard for the specified department."
-                      : "Rejection will terminate this request and the candidate will need to re-apply for access."}
-                  </p>
-                </div>
+              <div className="rounded-xl border border-border/60 bg-secondary/20 p-4 text-sm">
+                <p className="font-semibold text-foreground">{selectedRequest.full_name}</p>
+                <p className="mt-1 text-muted-foreground">{selectedRequest.email}</p>
+                <Badge className="mt-3 border-primary/30 bg-primary/10 text-primary-foreground/90">
+                  {selectedRequest.department}
+                </Badge>
               </div>
             )}
 
-            {approveError && (
-              <Alert className="border-red-500/30 bg-red-500/10">
-                <AlertCircle className="h-4 w-4 text-red-400" />
-                <AlertDescription className="text-red-400 text-[10px] font-black uppercase tracking-widest ml-2">
-                  {approveError}
-                </AlertDescription>
-              </Alert>
-            )}
+            <div
+              className={`rounded-xl border p-3 text-sm ${
+                actionType === "approve"
+                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-100"
+                  : "border-destructive/25 bg-destructive/10 text-red-100"
+              }`}
+            >
+              {actionType === "approve"
+                ? "This will grant staff dashboard access for the department they requested."
+                : "This will reject the request. The applicant can submit again if needed."}
+            </div>
 
-            <DialogFooter className="flex gap-4 sm:justify-between items-center pt-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => { setSelectedRequest(null); setApproveError(''); }}
-                className="h-14 flex-1 text-white/40 hover:text-white hover:bg-white/5 font-black uppercase tracking-widest text-[10px] transition-all"
-              >
-                Abort Mission
-              </Button>
-              <Button
-                onClick={confirmAction}
-                disabled={isPending}
-                className={`h-14 flex-[2] font-black uppercase tracking-[0.3em] text-[10px] rounded-xl shadow-2xl transition-all active:scale-[0.98] ${
-                  actionType === 'approve' 
-                    ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-600/20' 
-                    : 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/20'
-                }`}
-              >
-                {isPending ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    Processing...
-                  </span>
-                ) : (
-                  `Confirm ${actionType === 'approve' ? 'Authorization' : 'Rejection'}`
-                )}
-              </Button>
-            </DialogFooter>
+            {approveError ? (
+              <Alert className="flex gap-2 border-destructive/40 bg-destructive/10">
+                <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
+                <AlertDescription className="text-destructive-foreground">{approveError}</AlertDescription>
+              </Alert>
+            ) : null}
           </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedRequest(null);
+                setApproveError("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={actionType === "approve" ? "default" : "destructive"}
+              onClick={confirmAction}
+              disabled={isPending}
+            >
+              {isPending ? "Working…" : actionType === "approve" ? "Confirm approval" : "Confirm rejection"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

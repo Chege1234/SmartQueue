@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/api/apiClient";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Card, CardContent } from "@/Components/ui/card";
 import { Button } from "@/Components/ui/button";
-import { Link } from "react-router-dom";
 import {
   Users,
   Building2,
   Ticket,
-  TrendingUp,
   BarChart3,
-  Plus,
-  Loader2
+  Loader2,
+  Shield,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import DepartmentManager from "../Components/admin/DepartmentManager";
 import SystemStats from "../Components/admin/SystemStats";
@@ -23,7 +21,7 @@ import StaffRequestManager from "../Components/admin/StaffRequestManager";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const shouldReduceMotion = useReducedMotion();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,7 +34,7 @@ export default function AdminDashboard() {
           return;
         }
         const currentUser = await api.auth.me();
-        if (currentUser.role !== 'admin') {
+        if (currentUser.role !== "admin") {
           navigate(createPageUrl("Home"));
           return;
         }
@@ -51,71 +49,70 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments'],
+    queryKey: ["departments"],
     queryFn: () => api.entities.Department.list(),
-    enabled: !!user
+    enabled: !!user,
   });
 
   const { data: allTickets = [] } = useQuery({
-    queryKey: ['allTickets'],
+    queryKey: ["allTickets"],
     queryFn: () => api.entities.QueueTicket.list(),
     refetchInterval: 5000,
-    enabled: !!user
+    enabled: !!user,
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ['users'],
+    queryKey: ["users"],
     queryFn: () => api.entities.User.list(),
-    enabled: !!user
+    enabled: !!user,
   });
 
   const { data: staffRequests = [] } = useQuery({
-    queryKey: ['staffRequests'],
-    queryFn: () => api.entities.StaffRequest.list('-created_date'),
-    enabled: !!user
+    queryKey: ["staffRequests"],
+    queryFn: () => api.entities.StaffRequest.list("-created_date"),
+    enabled: !!user,
   });
 
-  const pendingRequests = staffRequests.filter(r => r.status === 'pending');
+  const pendingStaffCount = staffRequests.filter((r) => r.status === "pending").length;
 
-  const todayTickets = allTickets.filter(t =>
-    new Date(t.created_date).toDateString() === new Date().toDateString()
+  const todayTickets = allTickets.filter(
+    (t) => new Date(t.created_date).toDateString() === new Date().toDateString()
   );
 
   const stats = [
     {
-      title: "Total Departments",
+      title: "Departments",
       value: departments.length,
       icon: Building2,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100"
+      iconClass: "text-primary bg-primary/15 border-primary/25",
     },
     {
-      title: "Active Tickets Today",
+      title: "Tickets today",
       value: todayTickets.length,
       icon: Ticket,
-      color: "text-green-600",
-      bgColor: "bg-green-100"
+      iconClass: "text-accent bg-accent/10 border-accent/25",
     },
     {
-      title: "Total Users",
+      title: "Users",
       value: users.length,
       icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100"
+      iconClass: "text-foreground/90 bg-muted border-border",
     },
     {
-      title: "Avg. Queue Time",
-      value: "15m",
-      icon: TrendingUp,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100"
-    }
+      title: "Pending access",
+      value: pendingStaffCount,
+      icon: Shield,
+      iconClass:
+        pendingStaffCount > 0
+          ? "text-amber-300 bg-amber-500/15 border-amber-400/30"
+          : "text-muted-foreground bg-muted border-border",
+    },
   ];
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] relative z-10">
-        <Loader2 className="h-10 w-10 animate-spin text-purple-500" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-9 w-9 animate-spin text-primary" aria-hidden />
       </div>
     );
   }
@@ -124,93 +121,105 @@ export default function AdminDashboard() {
     return null;
   }
 
+  const motionProps = shouldReduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 12 },
+        animate: { opacity: 1, y: 0 },
+        transition: { type: "spring", stiffness: 380, damping: 28 },
+      };
+
   return (
-    <div className="space-y-10 relative z-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-2xl md:text-4xl font-semibold text-foreground tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground text-sm md:text-base mt-2">Manage departments, staff access, and system operations.</p>
+    <div className="space-y-10">
+      <div className="flex flex-col gap-6 border-b border-border/80 pb-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Administration
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+            Dashboard
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+            Review staff access, configure departments, and monitor queue activity in one place.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(createPageUrl("StaffDashboard"))}
-            className="h-11"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Staff View
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => navigate(createPageUrl("StaffDashboard"))}>
+            <Users className="h-4 w-4" />
+            Staff view
           </Button>
-          <Button
-            onClick={() => navigate(createPageUrl("Analytics"))}
-            className="h-11"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
+          <Button onClick={() => navigate(createPageUrl("Analytics"))}>
+            <BarChart3 className="h-4 w-4" />
             Analytics
           </Button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            {...motionProps}
+            transition={
+              shouldReduceMotion
+                ? undefined
+                : { type: "spring", stiffness: 380, damping: 28, delay: index * 0.04 }
+            }
           >
-            <Card className="glass-card border-none overflow-hidden relative group">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+            <Card className="overflow-hidden border-border/80 bg-card/90 shadow-none">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">{stat.title}</p>
-                    <p className="text-3xl font-semibold text-foreground tracking-tight">{stat.value}</p>
+                    <p className="text-xs font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500`}>
-                    <stat.icon className={`w-6 h-6 text-purple-400`} />
+                  <div
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${stat.iconClass}`}
+                  >
+                    <stat.icon className="h-5 w-5" strokeWidth={2} />
                   </div>
                 </div>
-                {/* Subtle bottom gradient indicator */}
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-12">
-        {/* Staff Access Requests */}
-        {pendingRequests.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 ml-1">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-              <h2 className="text-[10px] font-black text-red-400 uppercase tracking-[0.4em]">Pending Authorizations</h2>
+      <div className="grid grid-cols-1 gap-10 xl:grid-cols-12 xl:items-start">
+        <div className="space-y-10 xl:col-span-7">
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Staff access</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Approve or reject requests for the staff dashboard.
+              </p>
             </div>
             <StaffRequestManager requests={staffRequests} />
-          </div>
-        )}
+          </section>
 
-        {/* Department Management */}
-        <div className="space-y-6">
-          <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] ml-1">Department Setup</h2>
-          <DepartmentManager departments={departments} />
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Departments</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Control service desks, descriptions, and average handling time.
+              </p>
+            </div>
+            <DepartmentManager departments={departments} />
+          </section>
         </div>
 
-        {/* System Stats */}
-        <div className="space-y-6">
-          <h2 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] ml-1">System Stats</h2>
+        <aside className="space-y-3 xl:col-span-5 xl:sticky xl:top-24">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Queue activity</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ticket volume and completions by department.
+            </p>
+          </div>
           <SystemStats tickets={allTickets} departments={departments} />
-        </div>
-
-        {/* All Staff Requests - Collapsible / History */}
-        {staffRequests.length > 0 && pendingRequests.length === 0 && (
-          <div className="space-y-6 opacity-60 hover:opacity-100 transition-opacity">
-            <h2 className="text-[10px] font-black text-blue-100/30 uppercase tracking-[0.4em] ml-1">Access History</h2>
-            <StaffRequestManager requests={staffRequests} />
-          </div>
-        )}
+        </aside>
       </div>
     </div>
   );
 }
-

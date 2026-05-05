@@ -7,6 +7,8 @@ const baseStyles =
 const variantStyles = {
   default:
     "bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/80 shadow-[0_8px_24px_-12px_rgba(14,116,255,0.7)]",
+  destructive:
+    "bg-destructive text-destructive-foreground hover:bg-destructive/90 border border-destructive/60",
   outline:
     "border border-border bg-card text-card-foreground hover:bg-muted/60",
   ghost:

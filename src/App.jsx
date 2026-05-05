@@ -41,6 +41,10 @@ const StudentDashboard = lazyWithRetry(() => import('./Pages/StudentDashboard.js
 const StudentTakeTicket = lazyWithRetry(() => import('./Pages/StudentTakeTicket.jsx'));
 const StudentTicketView = lazyWithRetry(() => import('./Pages/StudentTicketView.jsx'));
 const TakeTicket = lazyWithRetry(() => import('./Pages/TakeTicket.jsx'));
+const SystemStatus = lazyWithRetry(() => import('./Pages/SystemStatus.jsx'));
+const Documentation = lazyWithRetry(() => import('./Pages/Documentation.jsx'));
+const PrivacyPolicy = lazyWithRetry(() => import('./Pages/PrivacyPolicy.jsx'));
+const TermsOfUse = lazyWithRetry(() => import('./Pages/TermsOfUse.jsx'));
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -83,6 +87,10 @@ export default function App() {
                             <Route path="/student-take-ticket" element={<Layout currentPageName="StudentTakeTicket"><StudentTakeTicket /></Layout>} />
                             <Route path="/student-ticket-view" element={<Layout currentPageName="StudentTicketView"><StudentTicketView /></Layout>} />
                             <Route path="/take-ticket" element={<Layout currentPageName="TakeTicket"><TakeTicket /></Layout>} />
+                            <Route path="/system-status" element={<Layout currentPageName="SystemStatus"><SystemStatus /></Layout>} />
+                            <Route path="/documentation" element={<Layout currentPageName="Documentation"><Documentation /></Layout>} />
+                            <Route path="/privacy-policy" element={<Layout currentPageName="PrivacyPolicy"><PrivacyPolicy /></Layout>} />
+                            <Route path="/terms-of-use" element={<Layout currentPageName="TermsOfUse"><TermsOfUse /></Layout>} />
                         </Routes>
                     </Suspense>
                 </BrowserRouter>
