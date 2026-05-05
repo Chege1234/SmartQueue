@@ -58,6 +58,7 @@ export default function InstallAppBanner() {
     return () => window.removeEventListener("appinstalled", onInstalled);
   }, []);
 
+
   const dismiss = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, "1");
     setDismissed(true);
