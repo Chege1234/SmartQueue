@@ -79,7 +79,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="flex justify-between items-center h-18 py-3">
                 <Link to={createPageUrl("Home")} className="flex items-center gap-3 group">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-primary/40 text-primary bg-primary/10 transition-transform group-hover:scale-105">
-                    <LayoutGrid className="w-6 h-6" />
+                    <LayoutGrid className="w-6 h-6" aria-hidden />
                   </div>
                   <div>
                     <h1 className="text-xl font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors">

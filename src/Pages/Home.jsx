@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
-import {
-  ChevronRight,
-  LayoutGrid
-} from "lucide-react";
+import { ChevronRight, LayoutGrid } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import InstallAppBanner from "@/Components/home/InstallAppBanner";
 
 export default function Home() {
   const [studentNumber, setStudentNumber] = useState("");
@@ -43,7 +41,7 @@ export default function Home() {
       >
         <div className="text-center space-y-4">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/15 rounded-2xl border border-primary/40 text-primary">
-            <LayoutGrid className="w-8 h-8" />
+            <LayoutGrid className="w-8 h-8" aria-hidden />
           </div>
           <div className="space-y-1">
             <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
@@ -54,6 +52,8 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        <InstallAppBanner />
 
         <motion.div
           initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
@@ -110,8 +110,15 @@ export default function Home() {
               </Button>
             </div>
 
-            <p className="text-xs text-center text-muted-foreground">
-              By joining, you agree to our Service Terms
+            <p className="text-xs text-center text-muted-foreground leading-relaxed">
+              By joining the queue, you agree to our{" "}
+              <Link
+                to={createPageUrl("TermsOfUse")}
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                Terms of use
+              </Link>
+              , including acceptable use of your student number and queue tickets.
             </p>
           </div>
         </motion.div>

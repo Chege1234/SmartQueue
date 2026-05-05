@@ -18,6 +18,11 @@ export default function TermsOfUse() {
           The service is provided for legitimate university administrative queues and related workflows. Use your own
           credentials only; do not misrepresent identity or department.
         </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          When you enter your student number on the home page and request or view a queue ticket, you agree to these terms
+          for that session and any tickets issued under your number until they are completed or cancelled according to
+          desk policy.
+        </p>
       </section>
 
       <section className="space-y-3">
